@@ -1,0 +1,23 @@
+
+version 17.4
+setwindow pcb
+generaledit
+shape add 
+setwindow form.mini
+FORM mini dyns_lock_mode Line 
+FORM mini class ETCH 
+FORM mini dyns_fill_type 'Static solid' 
+setwindow pcb
+pick grid 0.0 0.0
+pick grid -0.4 1.6
+setwindow form.mini
+FORM mini dyns_lock_mode Arc
+setwindow pcb
+pick grid 1.2 1.9
+pick grid 0.553737952736 1.28878614179
+pick grid 0.7 1.0
+setwindow form.mini
+FORM mini dyns_lock_mode Arc
+setwindow pcb
+pick grid 0.4 -0.1
+pick grid 0.948490561421 0.160188682603
