@@ -1,6 +1,6 @@
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from tkinter import *
 import ezdxf
 import numpy as np
@@ -23,10 +23,16 @@ def main():
     ax1 = fig1.add_subplot(111)
     ax1.set_aspect('equal')
     ax1.axis('off')
-    canvas1 = FigureCanvasTkAgg(fig1, master=main_win)
+    canvas1 = FigureCanvasTkAgg(fig1, master=f1)
     canvas1.get_tk_widget().grid(row=0, column=0,
                                  padx=3, pady=3,
                                  sticky=NSEW)
+    f2 = Frame(f1)
+    f2.grid(row=1, column=0)
+
+    f1.grid_rowconfigure(1, weight=1)
+    toolbar = NavigationToolbar2Tk(canvas1, f2)
+    ax1.format_coord = lambda x, y: ""
 
     canvas1.draw()
     ax1.axis('off')
@@ -34,7 +40,8 @@ def main():
     coord_dict = {}
 
     try:
-        dwg = ezdxf.readfile(r"D:\orcad_learn\test\ttttt.dxf")
+        dwg = ezdxf.readfile(r"D:\python_test\plot_draw\6o3yxyr7.dxf")
+        # dwg = ezdxf.readfile(r"D:\orcad_learn\test\ttttt.dxf")
         # dwg = ezdxf.readfile(r"D:\orcad_learn\test\test_dxf.dxf")
         ver = dwg.dxfversion
         print(ver)
@@ -95,14 +102,15 @@ def main():
 
     ax1.clear()
     ax1_p = {}
+
+    kk = [key for key in coord_dict]
+    print(kk)
+
     for key in coord_dict:
         pts = []
         tmp = []
         swap = 0
         bulge_len = 0
-        # print(key)
-        # if key != '96':
-        #     continue
         for ptt in coord_dict[key]:
             if ptt[-1] != 0:
                 swap = 1
@@ -119,7 +127,8 @@ def main():
                 bulge_len = 0
             else:
                 pts.append(ptt[0:2])
-        ply1 = plt.Polygon(pts, closed=True, fill=False, edgecolor='r', lw=1)
+        ply1 = plt.Polygon(pts, closed=True, fill=False,
+                           edgecolor='r', lw=1)
         ax1_p[key] = (ax1.add_patch(ply1))
         # break
 
@@ -154,24 +163,16 @@ def bulge2pt4arc(pt1, pt2, bulge_ratio, npt=5):
                      (pt1[1] - cc[1]) ** 2)
     a0 = np.arctan2(pt1[1] - cc[1], pt1[0] - cc[0])
     a1 = np.arctan2(pt2[1] - cc[1], pt2[0] - cc[0])
-
-    print(sig)
+    aa = (a1 - a0)
+    aa = aa + np.pi * 2 if aa < 0 else aa
 
     if sig > 0:
-        aa = (a1 - a0)
-        aa = aa + np.pi * 2 if aa < 0 else aa
         delta = aa / (npt + 1)
     else:
-        aa = (a1 - a0)
-        aa = aa + np.pi * 2 if aa < 0 else aa
         delta = (np.pi * 2 - aa) / (npt + 1)
 
     for i in range(1, npt):
-        # ccw angle ++
-        if sig > 0:
-            aa = a0 + delta * i
-        else:
-            aa = a0 - delta * i
+        aa = a0 + delta * i * sig
         cx = cc[0] + radius * np.cos(aa)
         cy = cc[1] + radius * np.sin(aa)
         res.append([cx, cy])
