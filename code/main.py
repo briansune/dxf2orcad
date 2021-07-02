@@ -99,25 +99,30 @@ def main():
         pts = []
         tmp = []
         swap = 0
+        bulge_len = 0
+        # print(key)
+        # if key != '96':
+        #     continue
         for ptt in coord_dict[key]:
-            # print(ptt)
             if ptt[-1] != 0:
                 swap = 1
+                bulge_len = ptt[-1]
                 pts.append(ptt[0:2])
             elif swap == 1:
                 tmp = ptt[0:2]
                 swap = 2
             elif swap == 2:
-                pts.append(ptt[0:2])
+                res = bulge2pt4arc(pts[-1], tmp, bulge_len, npt=23)
+                pts += res
                 pts.append(tmp)
                 swap = 0
+                bulge_len = 0
             else:
                 pts.append(ptt[0:2])
-
         ply1 = plt.Polygon(pts, closed=True, fill=False, edgecolor='r', lw=1)
         ax1_p[key] = (ax1.add_patch(ply1))
+        # break
 
-    print(ax1_p)
     # ax1_p['aa'].remove()
     ax1.autoscale()
     ax1.set_aspect('equal')
@@ -125,6 +130,52 @@ def main():
     canvas1.draw()
 
     main_win.mainloop()
+
+
+def bulge2pt4arc(pt1, pt2, bulge_ratio, npt=5):
+    res = []
+    sig = bulge_ratio / abs(bulge_ratio)
+    if abs(bulge_ratio) == 1:
+        bulge_ratio = bulge_ratio
+    elif 0 < bulge_ratio:
+        bulge_ratio = bulge_ratio - 1
+    elif bulge_ratio < 0:
+        bulge_ratio = bulge_ratio + 1
+
+    mp = [(pt1[0] + pt2[0]) / 2, (pt1[1] + pt2[1]) / 2]
+    radius = np.sqrt((pt1[0] - pt2[0]) ** 2 +
+                     (pt1[1] - pt2[1]) ** 2) / 2
+    angle = np.arctan2(pt2[1] - mp[1],
+                       pt2[0] - mp[0]) + np.pi / 2
+    cx = mp[0] - radius * np.cos(angle) * bulge_ratio
+    cy = mp[1] - radius * np.sin(angle) * bulge_ratio
+    cc = [cx, cy]
+    radius = np.sqrt((pt1[0] - cc[0]) ** 2 +
+                     (pt1[1] - cc[1]) ** 2)
+    a0 = np.arctan2(pt1[1] - cc[1], pt1[0] - cc[0])
+    a1 = np.arctan2(pt2[1] - cc[1], pt2[0] - cc[0])
+
+    print(sig)
+
+    if sig > 0:
+        aa = (a1 - a0)
+        aa = aa + np.pi * 2 if aa < 0 else aa
+        delta = aa / (npt + 1)
+    else:
+        aa = (a1 - a0)
+        aa = aa + np.pi * 2 if aa < 0 else aa
+        delta = (np.pi * 2 - aa) / (npt + 1)
+
+    for i in range(1, npt):
+        # ccw angle ++
+        if sig > 0:
+            aa = a0 + delta * i
+        else:
+            aa = a0 - delta * i
+        cx = cc[0] + radius * np.cos(aa)
+        cy = cc[1] + radius * np.sin(aa)
+        res.append([cx, cy])
+    return res
 
 
 if __name__ == '__main__':
