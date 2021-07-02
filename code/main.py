@@ -32,6 +32,7 @@ def main():
 
     f1.grid_rowconfigure(1, weight=1)
     toolbar = NavigationToolbar2Tk(canvas1, f2)
+    toolbar.update()
     ax1.format_coord = lambda x, y: ""
 
     canvas1.draw()
@@ -40,8 +41,7 @@ def main():
     coord_dict = {}
 
     try:
-        dwg = ezdxf.readfile(r"D:\python_test\plot_draw\6o3yxyr7.dxf")
-        # dwg = ezdxf.readfile(r"D:\orcad_learn\test\ttttt.dxf")
+        dwg = ezdxf.readfile(r"D:\orcad_learn\test\ttttt.dxf")
         # dwg = ezdxf.readfile(r"D:\orcad_learn\test\test_dxf.dxf")
         ver = dwg.dxfversion
         print(ver)
@@ -50,12 +50,29 @@ def main():
         layer_names = [layer.dxf.name for layer in dwg.layers]
         print(layer_names)
 
-        for polyline in msp.query('LWPOLYLINE'):
+        plyll_n = list(msp.query('LWPOLYLINE'))
+        plyll_o = list(msp.query('POLYLINE'))
+        if plyll_n:
+            plyll = plyll_n
+        elif plyll_o:
+            plyll = plyll_o
+        else:
+            plyll = []
+
+        for polyline in plyll:
             key = polyline.get_dxf_attrib('handle')
             tmp = []
             bulge_flag = False
             bulge_1st_coord = []
-            for coord in polyline.get_points():
+
+            try:
+                points_list = polyline.get_points()
+            except AttributeError:
+                points_list = []
+                for d1, d2 in zip(polyline.points(), polyline.vertices()):
+                    points_list.append(list(d1 + tuple([d2.dxf.bulge])))
+
+            for coord in points_list:
                 tmp.append([coord[0], coord[1], coord[-1]])
                 if bulge_flag:
                     bulge_flag = False
@@ -70,29 +87,6 @@ def main():
                     tmp.append([cx, cy, 0.0])
                 if coord[-1] != 0:
                     bulge_1st_coord = [coord[0], coord[1], coord[-1]]
-                    bulge_flag = True
-            coord_dict[key] = tmp
-
-        for polyline in msp.query('POLYLINE'):
-            key = polyline.get_dxf_attrib('handle')
-            tmp = []
-            bulge_flag = False
-            bulge_1st_coord = []
-            for coord, bulge in zip(polyline.points(), polyline.vertices()):
-                tmp.append(list(coord + tuple([bulge.dxf.bulge])))
-                if bulge_flag:
-                    bulge_flag = False
-                    mid_pt = [(bulge_1st_coord[0] + coord[0]) / 2,
-                              (bulge_1st_coord[1] + coord[1]) / 2]
-                    radius = np.sqrt((coord[0] - bulge_1st_coord[0]) ** 2 +
-                                     (coord[1] - bulge_1st_coord[1]) ** 2) / 2
-                    angle = np.arctan2(coord[1] - mid_pt[1],
-                                       coord[0] - mid_pt[0]) + np.pi / 2
-                    cx = mid_pt[0] - radius * np.cos(angle) * bulge_1st_coord[-1]
-                    cy = mid_pt[1] - radius * np.sin(angle) * bulge_1st_coord[-1]
-                    tmp.append([cx, cy, 0.0])
-                if bulge.dxf.bulge != 0:
-                    bulge_1st_coord = [coord[0], coord[1], bulge.dxf.bulge]
                     bulge_flag = True
             coord_dict[key] = tmp
     except IOError:
